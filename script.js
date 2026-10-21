@@ -3,7 +3,7 @@
    ========================================================================== */
 
 const HIGH_SCHOOLS = [
-    { id: 'hs1', name: 'Bergen County Academies', county: 'Bergen', url: 'https://www.bergen.org/site/Defaulta575.html?PageID=4583', notes: 'Top specialized high school in Hackensack; middle schoolers apply during 8th grade.' },
+    { id: 'hs1', name: 'Bergen County Academics', county: 'Bergen', url: 'https://www.bergen.org/site/Defaulta575.html?PageID=4583', notes: 'Top specialized high school in Hackensack; middle schoolers apply during 8th grade.' },
     { id: 'hs2', name: 'Burlington County Institute of Technology', county: 'Burlington', url: 'https://www.bcit.cc/o/bcit/page/biomedical-science', notes: 'Biomedical Science academy track.' },
     { id: 'hs3', name: 'Camden County Technical Schools', county: 'Camden', url: 'https://www.ccts.org/apps/pages/index.jsp?uREC_ID=260569&type=d&termREC_ID=&pREC_ID=1157907', notes: 'Career technical biological sciences.' },
     { id: 'hs4', name: 'Gloucester County Institute of Technology', county: 'Gloucester', url: 'https://www.gcit.org/admissions/career-programs/academy-of-biological-sciences', notes: 'Academy of Biological Sciences.' },
@@ -50,13 +50,15 @@ const OPPORTUNITIES = [
     { id: 'opp6', name: 'TSA Biotechnology Design Competition', cat: 'competition', url: 'https://tsaweb.org/students#competitions', notes: 'Technology Student Association national biotechnology challenges.' }
 ];
 
+const AVATARS = ['🔬', '🧬', '🧪', '🧫', '💻', '🎓', '💼'];
+
 // Persistent State loaded from LocalStorage
 let userProfile = JSON.parse(localStorage.getItem('biostart_userProfile')) || {
     name: "",
     email: "",
-    county: "Morris",
-    town: "Denville",
-    level: "High School",
+    county: "",
+    town: "",
+    level: "",
     avatarIdx: 0,
     savedIds: [],
     progress: {}
@@ -65,7 +67,6 @@ let userProfile = JSON.parse(localStorage.getItem('biostart_userProfile')) || {
 let selectedCountyFilter = "ALL";
 let activeCollegeMode = "foryou";
 let activeJobMode = "foryou";
-const AVATARS = ['🔬', '🧬', '🧪', '🧫', '💻', '🎓', '💼'];
 
 function saveState() {
     localStorage.setItem('biostart_userProfile', JSON.stringify(userProfile));
@@ -81,7 +82,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (document.getElementById('grid-opp')) renderOpportunities();
     if (document.getElementById('printable-resume')) updateResume();
     if (document.getElementById('saved-grid')) renderSaved();
-    if (document.getElementById('prof-fname')) loadProfileFormData();
+    if (document.getElementById('profile-view-mode')) loadProfileDisplay();
 });
 
 function updateUserHeaderDisplay() {
@@ -272,27 +273,50 @@ function printResumeOnly() {
     window.print();
 }
 
-/* --- ACCOUNT PROFILE & SAVED LISTINGS --- */
-function loadProfileFormData() {
-    if (userProfile.name) document.getElementById('prof-fname').value = userProfile.name;
-    if (userProfile.email) document.getElementById('prof-email').value = userProfile.email;
-    if (userProfile.county) document.getElementById('prof-county').value = userProfile.county;
-    if (userProfile.town) document.getElementById('prof-town').value = userProfile.town;
-    if (userProfile.level) document.getElementById('prof-level').value = userProfile.level;
+/* --- PROFILE VIEW / EDIT STATE MANAGEMENT --- */
+function enableProfileEditMode() {
+    const fnameInput = document.getElementById('prof-fname');
+    const emailInput = document.getElementById('prof-email');
+    const countyInput = document.getElementById('prof-county');
+    const townInput = document.getElementById('prof-town');
+    const levelInput = document.getElementById('prof-level');
+    const avatarDisp = document.getElementById('avatar-display');
 
-    document.getElementById('avatar-display').innerText = AVATARS[userProfile.avatarIdx || 0];
+    if (fnameInput) fnameInput.value = userProfile.name || '';
+    if (emailInput) emailInput.value = userProfile.email || '';
+    if (countyInput) countyInput.value = userProfile.county || '';
+    if (townInput) townInput.value = userProfile.town || '';
+    if (levelInput) levelInput.value = userProfile.level || '';
+    if (avatarDisp) avatarDisp.innerText = AVATARS[userProfile.avatarIdx || 0];
 
-    const nameDisp = document.getElementById('profile-name-display');
-    const emailDisp = document.getElementById('profile-email-display');
-    const locDisp = document.getElementById('profile-location-display');
+    document.getElementById('profile-view-mode').style.display = 'none';
+    document.getElementById('profile-edit-mode').style.display = 'block';
+}
 
-    if (nameDisp) nameDisp.innerText = userProfile.name || 'Profile Unsaved';
-    if (emailDisp) emailDisp.innerText = userProfile.email || 'Please complete the form to save profile';
-    if (locDisp) locDisp.innerText = `Location: ${userProfile.town || 'Unspecified'}, ${userProfile.county || 'Unspecified'} County (${userProfile.level || 'Unspecified'})`;
+function cancelProfileEditMode() {
+    document.getElementById('profile-edit-mode').style.display = 'none';
+    document.getElementById('profile-view-mode').style.display = 'block';
+}
+
+function loadProfileDisplay() {
+    const avatarSymbol = AVATARS[userProfile.avatarIdx || 0];
+
+    const viewAvatar = document.getElementById('view-avatar-display');
+    const viewName = document.getElementById('view-prof-name');
+    const viewEmail = document.getElementById('view-prof-email');
+    const viewLoc = document.getElementById('view-prof-location');
+    const viewLevel = document.getElementById('view-prof-level');
+
+    if (viewAvatar) viewAvatar.innerText = avatarSymbol;
+    if (viewName) viewName.innerText = userProfile.name || 'Guest Account';
+    if (viewEmail) viewEmail.innerText = userProfile.email || 'No email saved';
+    if (viewLoc) viewLoc.innerText = (userProfile.town && userProfile.county) ? `${userProfile.town}, ${userProfile.county} County, NJ` : 'Unspecified';
+    if (viewLevel) viewLevel.innerText = userProfile.level || 'Unspecified';
 }
 
 function saveAccountProfile(e) {
     e.preventDefault();
+
     userProfile.name = document.getElementById('prof-fname').value.trim();
     userProfile.email = document.getElementById('prof-email').value.trim();
     userProfile.county = document.getElementById('prof-county').value;
@@ -301,14 +325,16 @@ function saveAccountProfile(e) {
 
     saveState();
     updateUserHeaderDisplay();
-    loadProfileFormData();
+    loadProfileDisplay();
+    cancelProfileEditMode();
 
     alert("Account profile saved successfully!");
 }
 
 function cycleAvatar(dir) {
     userProfile.avatarIdx = (userProfile.avatarIdx + dir + AVATARS.length) % AVATARS.length;
-    document.getElementById('avatar-display').innerText = AVATARS[userProfile.avatarIdx];
+    const avatarDisp = document.getElementById('avatar-display');
+    if (avatarDisp) avatarDisp.innerText = AVATARS[userProfile.avatarIdx];
     saveState();
 }
 
