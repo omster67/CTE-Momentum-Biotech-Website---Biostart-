@@ -52,8 +52,9 @@ const JOBS = [
     { id: 'job4', name: 'Raincross Pharmacy Technician & Intern', cat: 'job', town: 'Denville', isNJ: true, ageMin: 16, season: 'All Seasons', url: 'https://raincrosspharmacy.com/', email: 'raincrosspharmacy@gmail.com', notes: 'Part-time pharmacy assistant position in Denville, NJ for high school/college students.' },
     { id: 'job5', name: 'Fidia Pharma Scientific Intern', cat: 'internship', town: 'Parsippany', isNJ: true, ageMin: 18, season: 'Summer', url: 'https://fidiapharma.us/', email: 'jobs@fidiapharma.us', notes: 'Biomedical device and pharmaceutical intern program in Parsippany, NJ.' },
     { id: 'job6', name: 'Wharton Pharmacy Assistant', cat: 'job', town: 'Wharton', isNJ: true, ageMin: 16, season: 'All Seasons', url: 'https://www.whartonpharmacy.com/', email: 'whartonpharmacyllc@gmail.com', notes: 'Age 16+ position in retail/clinical pharmacy operations near Wharton/Denville, NJ.' },
-    { id: 'job7', name: 'Genentech Biotechnology Summer Intern', cat: 'internship', town: 'South San Francisco', isNJ: false, ageMin: 18, season: 'Summer', url: 'https://www.gene.com/careers/university-and-early-career', email: 'universityrelations@gene.com', notes: 'Out-of-state molecular biology & pharmaceutical research internship in California.' },
-    { id: 'job8', name: 'Pfizer Undergraduate Lab Specialist', cat: 'internship', town: 'Cambridge', isNJ: false, ageMin: 18, season: 'Summer', url: 'https://www.pfizer.com/about/careers', email: 'earlycareers@pfizer.com', notes: 'Out-of-state biomedical research intern opportunity in Cambridge, MA.' }
+    { id: 'job7', name: 'ZebraSci Biotech Lab Technician', cat: 'job', town: 'Temecula', isNJ: false, ageMin: 18, season: 'All Seasons', url: 'https://zebrasci.com/', email: 'sales@zebrasci.com', notes: 'Combination drug-device testing and quality assurance role.' },
+    { id: 'job8', name: 'Genentech Biotechnology Summer Intern', cat: 'internship', town: 'South San Francisco', isNJ: false, ageMin: 18, season: 'Summer', url: 'https://www.gene.com/careers/university-and-early-career', email: 'universityrelations@gene.com', notes: 'Out-of-state molecular biology & pharmaceutical research internship in California.' },
+    { id: 'job9', name: 'Pfizer Undergraduate Lab Specialist', cat: 'internship', town: 'Cambridge', isNJ: false, ageMin: 18, season: 'Summer', url: 'https://www.pfizer.com/about/careers', email: 'earlycareers@pfizer.com', notes: 'Out-of-state biomedical research intern opportunity in Cambridge, MA.' }
 ];
 
 const OPPORTUNITIES = [
@@ -64,6 +65,8 @@ const OPPORTUNITIES = [
     { id: 'opp5', name: 'HOSA Future Health Professionals', cat: 'competition', town: 'Statewide', ageMin: 14, season: 'Spring', url: 'https://hosa.org/competition/', notes: 'State and national healthcare & biotech competitive events.' },
     { id: 'opp6', name: 'TSA Biotechnology Design Competition', cat: 'competition', town: 'Statewide', ageMin: 13, season: 'Spring', url: 'https://tsaweb.org/students#competitions', notes: 'Technology Student Association national biotechnology challenges.' }
 ];
+
+const AVATARS = ['🔬', '🧬', '🧪', '🧫', '💻', '🎓', '💼'];
 
 // Persistent State loaded from LocalStorage
 let userProfile = JSON.parse(localStorage.getItem('biostart_userProfile')) || {
@@ -84,7 +87,6 @@ let userProfile = JSON.parse(localStorage.getItem('biostart_userProfile')) || {
 let selectedCountyFilter = "ALL";
 let activeCollegeMode = "foryou";
 let activeJobMode = "foryou";
-const AVATARS = ['🔬', '🧬', '🧪', '🧫', '💻', '🎓', '💼'];
 
 function saveState() {
     localStorage.setItem('biostart_userProfile', JSON.stringify(userProfile));
@@ -102,13 +104,13 @@ window.addEventListener('DOMContentLoaded', () => {
         loadSampleResumeData();
     }
     if (document.getElementById('saved-grid')) renderSaved();
-    if (document.getElementById('prof-fname')) loadProfileFormData();
+    if (document.getElementById('prof-fname') || document.getElementById('profile-edit-form')) loadProfileDisplay();
 });
 
 function updateUserHeaderDisplay() {
     const greetingEl = document.getElementById('user-greeting');
     if (greetingEl) {
-        greetingEl.innerText = userProfile.name ? `${userProfile.name} (${userProfile.town || userProfile.county})` : 'Guest Account';
+        greetingEl.innerText = userProfile.name ? `${userProfile.name} (${userProfile.town || userProfile.county || 'NJ'})` : 'Guest Account';
     }
 }
 
@@ -168,7 +170,7 @@ function renderHighSchools() {
                 <div class="card-title">${hs.name}</div>
                 <div class="card-body">${hs.notes}</div>
                 <div class="card-actions">
-                    <button class="btn-action" onclick="openModal('${hs.name}', '${hs.notes}', '${hs.url}')">View Details</button>
+                    <a href="${hs.url}" target="_blank" class="btn-action">View Details</a>
                     <span class="like-heart ${isLiked ? 'liked' : ''}" onclick="toggleLike('${hs.id}')">♥</span>
                 </div>
             </div>`;
@@ -234,7 +236,7 @@ function renderColleges() {
                 <div class="card-title">${col.name}</div>
                 <div class="card-body"><strong>Cost:</strong> ${col.cost}<br><strong>Acceptance:</strong> ${col.acceptance}<br>${col.notes}</div>
                 <div class="card-actions">
-                    <button class="btn-action" onclick="openModal('${col.name}', '${col.notes}', '${col.url}')">View Details</button>
+                    <a href="${col.url}" target="_blank" class="btn-action">View Details</a>
                     <span class="like-heart ${isLiked ? 'liked' : ''}" onclick="toggleLike('${col.id}')">♥</span>
                 </div>
             </div>`;
@@ -300,7 +302,7 @@ function renderJobs() {
                 <div class="card-title">${j.name}</div>
                 <div class="card-body"><strong>Contact Email:</strong> ${j.email}<br>${j.notes}</div>
                 <div class="card-actions">
-                    <button class="btn-action" onclick="openModal('${j.name}', '${j.notes}', '${j.url}')">Apply Now</button>
+                    <a href="${j.url}" target="_blank" class="btn-action">Apply Now</a>
                     <span class="like-heart ${isLiked ? 'liked' : ''}" onclick="toggleLike('${j.id}')">♥</span>
                 </div>
             </div>`;
@@ -331,7 +333,7 @@ function renderOpportunities() {
                 <div class="card-title">${o.name}</div>
                 <div class="card-body">${o.notes}</div>
                 <div class="card-actions">
-                    <button class="btn-action" onclick="openModal('${o.name}', '${o.notes}', '${o.url}')">View Details</button>
+                    <a href="${o.url}" target="_blank" class="btn-action">View Details</a>
                     <span class="like-heart ${isLiked ? 'liked' : ''}" onclick="toggleLike('${o.id}')">♥</span>
                 </div>
             </div>`;
@@ -390,7 +392,7 @@ function handleSurveySubmit(e) {
 }
 
 /* ==========================================================================
-   UPDATED MULTI-TEMPLATE & PROFESSIONAL RESUME BUILDER
+   MULTI-TEMPLATE & PROFESSIONAL RESUME BUILDER
    ========================================================================== */
 let currentResumeTemplate = 'modern';
 
@@ -751,23 +753,12 @@ function updateResume() {
     }
 }
 
-/* --- ACCOUNT PROFILE & SAVED LISTINGS --- */
-function loadProfileFormData() {
-    if (userProfile.name) document.getElementById('prof-fname').value = userProfile.name;
-    if (userProfile.email) document.getElementById('prof-email').value = userProfile.email;
-    if (userProfile.county) document.getElementById('prof-county').value = userProfile.county;
-    if (userProfile.town) document.getElementById('prof-town').value = userProfile.town;
-    if (userProfile.level) document.getElementById('prof-level').value = userProfile.level;
-
-    document.getElementById('avatar-display').innerText = AVATARS[userProfile.avatarIdx || 0];
-
-    const nameDisp = document.getElementById('profile-name-display');
-    const emailDisp = document.getElementById('profile-email-display');
-    const locDisp = document.getElementById('profile-location-display');
-
-    if (nameDisp) nameDisp.innerText = userProfile.name || 'Profile Unsaved';
-    if (emailDisp) emailDisp.innerText = userProfile.email || 'Please complete the form to save profile';
-    if (locDisp) locDisp.innerText = `Location: ${userProfile.town || 'Unspecified'}, ${userProfile.county || 'Unspecified'} County (${userProfile.level || 'Unspecified'})`;
+/* --- ACCOUNT PROFILE MANAGEMENT & INTERACTIVITY --- */
+function cycleAvatar(direction) {
+    userProfile.avatarIdx = (userProfile.avatarIdx + direction + AVATARS.length) % AVATARS.length;
+    const display = document.getElementById('avatar-display');
+    if (display) display.innerText = AVATARS[userProfile.avatarIdx];
+    saveState();
 }
 
 function saveAccountProfile(e) {
@@ -780,44 +771,109 @@ function saveAccountProfile(e) {
 
     saveState();
     updateUserHeaderDisplay();
-    loadProfileFormData();
-
-    alert("Account profile saved successfully!");
+    loadProfileDisplay();
+    alert("Profile saved successfully!");
 }
 
-function cycleAvatar(dir) {
-    userProfile.avatarIdx = (userProfile.avatarIdx + dir + AVATARS.length) % AVATARS.length;
-    document.getElementById('avatar-display').innerText = AVATARS[userProfile.avatarIdx];
+function loadProfileDisplay() {
+    const nameDisp = document.getElementById('profile-name-display');
+    const emailDisp = document.getElementById('profile-email-display');
+    const locDisp = document.getElementById('profile-location-display');
+    const levelDisp = document.getElementById('profile-level-display');
+    const avatarDisp = document.getElementById('profile-avatar-display');
+    const saveBtn = document.getElementById('save-profile-btn');
+    const editBtn = document.getElementById('edit-profile-btn');
+
+    // Fill form input values
+    if (document.getElementById('prof-fname')) document.getElementById('prof-fname').value = userProfile.name || '';
+    if (document.getElementById('prof-email')) document.getElementById('prof-email').value = userProfile.email || '';
+    if (document.getElementById('prof-county')) document.getElementById('prof-county').value = userProfile.county || '';
+    if (document.getElementById('prof-town')) document.getElementById('prof-town').value = userProfile.town || '';
+    if (document.getElementById('prof-level')) document.getElementById('prof-level').value = userProfile.level || '';
+    if (document.getElementById('avatar-display')) document.getElementById('avatar-display').innerText = AVATARS[userProfile.avatarIdx || 0];
+
+    if (userProfile.name) {
+        if (nameDisp) nameDisp.innerText = userProfile.name;
+        if (emailDisp) {
+            emailDisp.innerText = userProfile.email;
+            emailDisp.style.color = '#333';
+        }
+        if (locDisp) locDisp.innerText = `Location: ${userProfile.town || 'Unspecified'}, ${userProfile.county || 'Unspecified'} County, NJ`;
+        if (levelDisp) levelDisp.innerText = `Academic Level: ${userProfile.level || 'Unspecified'}`;
+        if (avatarDisp) avatarDisp.innerText = AVATARS[userProfile.avatarIdx || 0];
+
+        toggleFormFields(true);
+
+        if (saveBtn) saveBtn.style.display = 'none';
+        if (editBtn) editBtn.style.display = 'block';
+    } else {
+        toggleFormFields(false);
+        if (saveBtn) saveBtn.style.display = 'block';
+        if (editBtn) editBtn.style.display = 'none';
+    }
+}
+
+function enableProfileEdit() {
+    const saveBtn = document.getElementById('save-profile-btn');
+    const editBtn = document.getElementById('edit-profile-btn');
+
+    toggleFormFields(false);
+
+    if (saveBtn) saveBtn.style.display = 'block';
+    if (editBtn) editBtn.style.display = 'none';
+}
+
+function toggleFormFields(disabled) {
+    const fields = ['prof-fname', 'prof-email', 'prof-pass', 'prof-county', 'prof-town', 'prof-level'];
+    fields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = disabled;
+    });
+
+    const navBtns = document.querySelectorAll('.avatar-nav-btn');
+    navBtns.forEach(btn => btn.disabled = disabled);
+}
+
+/* --- SAVED ITEMS & PROGRESS TRACKING --- */
+function updateSavedStatus(id, value) {
+    userProfile.progress[id] = value;
     saveState();
 }
 
 function renderSaved() {
-    const container = document.getElementById('saved-grid');
+    const grid = document.getElementById('saved-grid');
     const countEl = document.getElementById('saved-count');
-    if (!container) return;
+    if (!grid) return;
 
-    if (countEl) countEl.innerText = userProfile.savedIds.length;
-    container.innerHTML = '';
-    
-    if (userProfile.savedIds.length === 0) {
-        container.innerHTML = '<p style="background: white; padding: 20px; border: 2px solid black;">No saved items yet. Click the heart icon (♥) on any card to bookmark items here!</p>';
+    const allItems = [...HIGH_SCHOOLS, ...COLLEGES, ...JOBS, ...OPPORTUNITIES];
+    const savedItems = allItems.filter(item => userProfile.savedIds.includes(item.id));
+
+    if (countEl) countEl.innerText = savedItems.length;
+
+    if (savedItems.length === 0) {
+        grid.innerHTML = '<p style="color:#666; font-style:italic; background: white; padding: 20px; border: 2px solid black;">No saved opportunities yet. Click the heart icon (♥) on any item to save it here!</p>';
         return;
     }
 
-    const ALL = [...HIGH_SCHOOLS, ...COLLEGES, ...JOBS, ...OPPORTUNITIES];
-    userProfile.savedIds.forEach(id => {
-        const item = ALL.find(x => x.id === id);
-        if (!item) return;
-        container.innerHTML += `
-            <div class="card">
-                <div class="card-title">${item.name}</div>
-                <div class="card-body">${item.notes || ''}</div>
+    grid.innerHTML = '';
+    savedItems.forEach(item => {
+        const currentStatus = userProfile.progress[item.id] || "Interested";
+        grid.innerHTML += `
+            <div class="card" style="margin-bottom:12px;">
+                <div style="display:flex; justify-content:space-between; align-items:start;">
+                    <div>
+                        <div class="card-title">${item.name}</div>
+                        <div class="card-body" style="font-size:12px;">${item.notes || ''}</div>
+                    </div>
+                    <span class="like-heart liked" onclick="toggleLike('${item.id}')">♥</span>
+                </div>
                 <div style="margin-top:10px;">
                     <label style="font-size:10px; font-weight:800; text-transform:uppercase;">Application Tracker Status:</label><br>
-                    <select style="padding:6px; font-weight:bold; border:2px solid #000; width:100%; margin-top:4px;" onchange="userProfile.progress['${id}']=this.value; saveState();">
-                        <option value="Interested" ${userProfile.progress[id]==='Interested'?'selected':''}>Interested</option>
-                        <option value="Applied" ${userProfile.progress[id]==='Applied'?'selected':''}>Applied</option>
-                        <option value="Accepted" ${userProfile.progress[id]==='Accepted'?'selected':''}>Accepted 🎉</option>
+                    <select class="resume-field" style="padding:6px; font-weight:bold; border:2px solid #000; width:100%; margin-top:4px;" onchange="updateSavedStatus('${item.id}', this.value)">
+                        <option value="Interested" ${currentStatus === 'Interested' ? 'selected' : ''}>Interested</option>
+                        <option value="Applying" ${currentStatus === 'Applying' ? 'selected' : ''}>Applying</option>
+                        <option value="Applied" ${currentStatus === 'Applied' ? 'selected' : ''}>Applied</option>
+                        <option value="Accepted" ${currentStatus === 'Accepted' ? 'selected' : ''}>Accepted 🎉</option>
                     </select>
                 </div>
             </div>`;
